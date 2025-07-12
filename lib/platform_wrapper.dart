@@ -70,6 +70,7 @@ class BarcodeScanner {
       ..restrictFormat.addAll(options.restrictFormat)
       ..autoEnableFlash = options.autoEnableFlash
       ..strings.addAll(options.strings)
+      ..withImage = options.withImage
       ..android = (proto.AndroidConfiguration()
         ..useAutoFocus = options.android.useAutoFocus
         ..aspectTolerance = options.android.aspectTolerance
@@ -84,6 +85,7 @@ class BarcodeScanner {
       formatNote: tmpResult.formatNote,
       rawContent: tmpResult.rawContent,
       type: tmpResult.type,
+      imagePath: tmpResult.imagePath.isEmpty ? null : tmpResult.imagePath,
     );
   }
 

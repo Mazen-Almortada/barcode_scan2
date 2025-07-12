@@ -4,14 +4,25 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ActivityInfo
+import android.graphics.Color
+import android.graphics.drawable.LayerDrawable
+import android.graphics.drawable.ShapeDrawable
+import android.graphics.drawable.shapes.OvalShape
+import android.hardware.Camera
 import android.os.Bundle
+import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.Surface
+import android.view.View
 import android.view.WindowManager
+import android.widget.FrameLayout
+import android.widget.ImageButton
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.Result
 import me.dm7.barcodescanner.zxing.ZXingScannerView
+import java.io.File
+import java.io.FileOutputStream
 
 class BarcodeScannerActivity : Activity(), ZXingScannerView.ResultHandler {
 
@@ -21,6 +32,11 @@ class BarcodeScannerActivity : Activity(), ZXingScannerView.ResultHandler {
 
     private lateinit var config: Protos.Configuration
     private var scannerView: ZXingScannerView? = null
+    private var captureButton: ImageButton? = null
+    private var lastResult: Protos.ScanResult? = null
+    private var isCodeDetected = false
+    private var rootLayout: FrameLayout? = null
+
 
     companion object {
         const val TOGGLE_FLASH = 200
@@ -45,14 +61,12 @@ class BarcodeScannerActivity : Activity(), ZXingScannerView.ResultHandler {
 
     }
 
-    // region Activity lifecycle
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        //lock orientation
         val rotation = (getSystemService(
                 Context.WINDOW_SERVICE) as WindowManager).defaultDisplay.rotation
-        var orientation = when (rotation) {
+        val orientation = when (rotation) {
             Surface.ROTATION_0 -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
             Surface.ROTATION_90 -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
             Surface.ROTATION_180 -> ActivityInfo.SCREEN_ORIENTATION_REVERSE_PORTRAIT
@@ -63,36 +77,92 @@ class BarcodeScannerActivity : Activity(), ZXingScannerView.ResultHandler {
 
         config = Protos.Configuration.parseFrom(intent.extras!!.getByteArray(EXTRA_CONFIG))
 
-        var title = config.android.appBarTitle as String
+        val title = config.android.appBarTitle
         if (title.isNotEmpty()) {
             actionBar?.title = title
         }
+        
+        rootLayout = FrameLayout(this)
+        setContentView(rootLayout)
     }
 
-    private fun setupScannerView() {
-        if (scannerView != null) {
-            return
-        }
+    private fun takePicture() {
+        val camera = (scannerView as? ZXingAutofocusScannerView)?.mCamera
+        camera?.takePicture(null, null, Camera.PictureCallback { data, _ ->
+            if (lastResult != null) {
+                val imageFile = File.createTempFile("barcode_scan_image", ".jpg", cacheDir)
+                FileOutputStream(imageFile).use { it.write(data) }
+
+                val builder = lastResult!!.toBuilder()
+                builder.imagePath = imageFile.absolutePath
+                val resultWithImagePath = builder.build()
+
+                val intent = Intent()
+                intent.putExtra(EXTRA_RESULT, resultWithImagePath.toByteArray())
+                setResult(Activity.RESULT_OK, intent)
+                finish()
+            }
+        })
+    }
+
+
+    private fun setupScannerView(forCapture: Boolean = false) {
+        rootLayout?.removeAllViews()
 
         scannerView = ZXingAutofocusScannerView(this).apply {
+            this.setLaserEnabled(!forCapture)
+            this.setBorderColor(if (forCapture) Color.TRANSPARENT else Color.GREEN)
+            this.setBorderStrokeWidth(0)
+            
             setAutoFocus(config.android.useAutoFocus)
-            val restrictedFormats = mapRestrictedBarcodeTypes()
-            if (restrictedFormats.isNotEmpty()) {
-                setFormats(restrictedFormats)
+            if (!forCapture) {
+                val restrictedFormats = mapRestrictedBarcodeTypes()
+                if (restrictedFormats.isNotEmpty()) {
+                    setFormats(restrictedFormats)
+                }
             }
-
-            // this parameter will make your HUAWEI phone works great!
             setAspectTolerance(config.android.aspectTolerance.toFloat())
             if (config.autoEnableFlash) {
                 flash = config.autoEnableFlash
                 invalidateOptionsMenu()
             }
         }
+        rootLayout?.addView(scannerView)
 
-        setContentView(scannerView)
+        val innerCircle = ShapeDrawable(OvalShape()).apply {
+            paint.color = Color.WHITE
+        }
+
+        val outerRing = ShapeDrawable(OvalShape()).apply {
+            paint.style = android.graphics.Paint.Style.STROKE
+            paint.color = Color.WHITE
+            paint.strokeWidth = 8f
+        }
+
+        val layers = arrayOf(outerRing, innerCircle)
+        val layerDrawable = LayerDrawable(layers).apply {
+            setLayerInset(1, 12, 12, 12, 12)
+        }
+
+        captureButton = ImageButton(this).apply {
+            background = layerDrawable
+            visibility = if (forCapture) View.VISIBLE else View.GONE
+            val params = FrameLayout.LayoutParams(
+                180,
+                180,
+                Gravity.BOTTOM or Gravity.CENTER_HORIZONTAL
+            )
+            params.bottomMargin = 100
+            layoutParams = params
+
+            setOnClickListener {
+                it.isEnabled = false
+                takePicture()
+            }
+        }
+        rootLayout?.addView(captureButton)
     }
 
-    // region AppBar menu
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         var buttonText = config.stringsMap["flash_on"]
         if (scannerView?.flash == true) {
@@ -128,33 +198,37 @@ class BarcodeScannerActivity : Activity(), ZXingScannerView.ResultHandler {
 
     override fun onResume() {
         super.onResume()
-        setupScannerView()
-        scannerView?.setResultHandler(this)
+        setupScannerView(forCapture = false)
+        startCamera(forScanning = true)
+    }
+
+    private fun startCamera(forScanning: Boolean) {
+        scannerView?.stopCamera()
+        val handler = if (forScanning) this else null
+        scannerView?.setResultHandler(handler)
         if (config.useCamera > -1) {
             scannerView?.startCamera(config.useCamera)
         } else {
             scannerView?.startCamera()
         }
     }
-    // endregion
 
     override fun handleResult(result: Result?) {
-        val intent = Intent()
-
-        requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        if (isCodeDetected) {
+            return
+        }
+        isCodeDetected = true
 
         val builder = Protos.ScanResult.newBuilder()
         if (result == null) {
-
             builder.let {
                 it.format = Protos.BarcodeFormat.unknown
                 it.rawContent = "No data was scanned"
                 it.type = Protos.ResultType.Error
             }
         } else {
-
             val format = (formatMap.filterValues { it == result.barcodeFormat }.keys.firstOrNull()
-                    ?: Protos.BarcodeFormat.unknown)
+                ?: Protos.BarcodeFormat.unknown)
 
             var formatNote = ""
             if (format == Protos.BarcodeFormat.unknown) {
@@ -168,10 +242,20 @@ class BarcodeScannerActivity : Activity(), ZXingScannerView.ResultHandler {
                 it.type = Protos.ResultType.Barcode
             }
         }
-        val res = builder.build()
-        intent.putExtra(EXTRA_RESULT, res.toByteArray())
-        setResult(RESULT_OK, intent)
-        finish()
+        val scanResult = builder.build()
+
+        if (config.withImage) {
+            lastResult = scanResult
+            
+            setupScannerView(forCapture = true)
+            startCamera(forScanning = false)
+
+        } else {
+            val intent = Intent()
+            intent.putExtra(EXTRA_RESULT, scanResult.toByteArray())
+            setResult(RESULT_OK, intent)
+            finish()
+        }
     }
 
     private fun mapRestrictedBarcodeTypes(): List<BarcodeFormat> {
@@ -182,7 +266,6 @@ class BarcodeScannerActivity : Activity(), ZXingScannerView.ResultHandler {
                 print("Unrecognized")
                 return@forEach
             }
-
             types.add(formatMap.getValue(it))
         }
 

@@ -1,13 +1,14 @@
+// This is a generated file - do not edit.
 //
-//  Generated code. Do not modify.
-//  source: protos/protos.proto
-//
-// @dart = 2.12
+// Generated from protos/protos.proto.
+
+// @dart = 3.3
 
 // ignore_for_file: annotate_overrides, camel_case_types, comment_references
-// ignore_for_file: constant_identifier_names, library_prefixes
-// ignore_for_file: non_constant_identifier_names, prefer_final_fields
-// ignore_for_file: unnecessary_import, unnecessary_this, unused_import
+// ignore_for_file: constant_identifier_names
+// ignore_for_file: curly_braces_in_flow_control_structures
+// ignore_for_file: deprecated_member_use_from_same_package, library_prefixes
+// ignore_for_file: non_constant_identifier_names, unused_import
 
 import 'dart:convert' as $convert;
 import 'dart:core' as $core;
@@ -77,6 +78,7 @@ const Configuration$json = {
     {'1': 'useCamera', '3': 3, '4': 1, '5': 5, '10': 'useCamera'},
     {'1': 'android', '3': 4, '4': 1, '5': 11, '6': '.AndroidConfiguration', '10': 'android'},
     {'1': 'autoEnableFlash', '3': 5, '4': 1, '5': 8, '10': 'autoEnableFlash'},
+    {'1': 'withImage', '3': 6, '4': 1, '5': 8, '10': 'withImage'},
   ],
   '3': [Configuration_StringsEntry$json],
 };
@@ -97,8 +99,9 @@ final $typed_data.Uint8List configurationDescriptor = $convert.base64Decode(
     'NFbnRyeVIHc3RyaW5ncxI2Cg5yZXN0cmljdEZvcm1hdBgCIAMoDjIOLkJhcmNvZGVGb3JtYXRS'
     'DnJlc3RyaWN0Rm9ybWF0EhwKCXVzZUNhbWVyYRgDIAEoBVIJdXNlQ2FtZXJhEi8KB2FuZHJvaW'
     'QYBCABKAsyFS5BbmRyb2lkQ29uZmlndXJhdGlvblIHYW5kcm9pZBIoCg9hdXRvRW5hYmxlRmxh'
-    'c2gYBSABKAhSD2F1dG9FbmFibGVGbGFzaBo6CgxTdHJpbmdzRW50cnkSEAoDa2V5GAEgASgJUg'
-    'NrZXkSFAoFdmFsdWUYAiABKAlSBXZhbHVlOgI4AQ==');
+    'c2gYBSABKAhSD2F1dG9FbmFibGVGbGFzaBIcCgl3aXRoSW1hZ2UYBiABKAhSCXdpdGhJbWFnZR'
+    'o6CgxTdHJpbmdzRW50cnkSEAoDa2V5GAEgASgJUgNrZXkSFAoFdmFsdWUYAiABKAlSBXZhbHVl'
+    'OgI4AQ==');
 
 @$core.Deprecated('Use scanResultDescriptor instead')
 const ScanResult$json = {
@@ -108,6 +111,7 @@ const ScanResult$json = {
     {'1': 'rawContent', '3': 2, '4': 1, '5': 9, '10': 'rawContent'},
     {'1': 'format', '3': 3, '4': 1, '5': 14, '6': '.BarcodeFormat', '10': 'format'},
     {'1': 'formatNote', '3': 4, '4': 1, '5': 9, '10': 'formatNote'},
+    {'1': 'imagePath', '3': 5, '4': 1, '5': 9, '10': 'imagePath'},
   ],
 };
 
@@ -115,5 +119,6 @@ const ScanResult$json = {
 final $typed_data.Uint8List scanResultDescriptor = $convert.base64Decode(
     'CgpTY2FuUmVzdWx0Eh8KBHR5cGUYASABKA4yCy5SZXN1bHRUeXBlUgR0eXBlEh4KCnJhd0Nvbn'
     'RlbnQYAiABKAlSCnJhd0NvbnRlbnQSJgoGZm9ybWF0GAMgASgOMg4uQmFyY29kZUZvcm1hdFIG'
-    'Zm9ybWF0Eh4KCmZvcm1hdE5vdGUYBCABKAlSCmZvcm1hdE5vdGU=');
+    'Zm9ybWF0Eh4KCmZvcm1hdE5vdGUYBCABKAlSCmZvcm1hdE5vdGUSHAoJaW1hZ2VQYXRoGAUgAS'
+    'gJUglpbWFnZVBhdGg=');
 

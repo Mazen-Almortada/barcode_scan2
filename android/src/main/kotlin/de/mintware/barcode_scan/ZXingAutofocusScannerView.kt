@@ -8,10 +8,18 @@ import me.dm7.barcodescanner.zxing.ZXingScannerView
 
 class ZXingAutofocusScannerView(context: Context) : ZXingScannerView(context) {
 
+    private var mCameraWrapper: CameraWrapper? = null
+
+    val mCamera: Camera?
+        get() = mCameraWrapper?.mCamera
+
+
     private var callbackFocus = false
     private var autofocusPresence = false
 
     override fun setupCameraPreview(cameraWrapper: CameraWrapper?) {
+        this.mCameraWrapper = cameraWrapper
+
         cameraWrapper?.mCamera?.parameters?.let { parameters ->
             try {
                 autofocusPresence = parameters.supportedFocusModes.contains(Camera.Parameters.FOCUS_MODE_AUTO);
@@ -25,7 +33,6 @@ class ZXingAutofocusScannerView(context: Context) : ZXingScannerView(context) {
     }
 
     override fun setAutoFocus(state: Boolean) {
-        //Fix to avoid crash on devices without autofocus (Issue #226)
         if(autofocusPresence){
             super.setAutoFocus(callbackFocus)
         }

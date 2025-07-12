@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'dart:io' show Platform;
+import 'dart:io' show File, Platform;
 
 import 'package:barcode_scan2/barcode_scan2.dart';
 import 'package:flutter/material.dart';
@@ -79,6 +79,12 @@ class _AppState extends State<App> {
                       title: const Text('Format note'),
                       subtitle: Text(scanResult.formatNote),
                     ),
+                    // In your widget that displays the result:
+                    if (scanResult.imagePath != null)
+                      ListTile(
+                        title: const Text('image'),
+                        subtitle: Image.file(File(scanResult.imagePath!)),
+                      ),
                   ],
                 ),
               ),
@@ -239,6 +245,7 @@ class _AppState extends State<App> {
           restrictFormat: selectedFormats,
           useCamera: _selectedCamera,
           autoEnableFlash: _autoEnableFlash,
+          withImage: true,
           android: AndroidOptions(
             aspectTolerance: _aspectTolerance,
             useAutoFocus: _useAutoFocus,

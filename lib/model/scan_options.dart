@@ -14,6 +14,7 @@ class ScanOptions {
       'flash_on': 'Flash on',
       'flash_off': 'Flash off',
     },
+    this.withImage = false,
   }) : assert(useCamera >= -1);
 
   /// This map contains strings which are displayed to the user
@@ -23,6 +24,8 @@ class ScanOptions {
   //  - flash_on : The text of the flash on button
   //  - flash_off : The Text of the flash off button
   final Map<String, String> strings;
+  // capture an image after a barcode is detected
+  final bool withImage;
 
   /// Restrict the supported barcode formats
   final List<BarcodeFormat> restrictFormat;
